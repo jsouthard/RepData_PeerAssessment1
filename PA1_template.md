@@ -9,7 +9,8 @@ output:
 Since the data is contained within the repository, check to see if it is unpacked and if not, do so before proceeding. Once unpacked, we load
 it into `activity`. Specific transforms occur prior to their use.
 
-```{r}
+
+```r
 dataFile <- "activity.csv"
 if (!file.exists(dataFile)) {
     unzip("activity.zip")
@@ -23,7 +24,8 @@ rm(dataFile)            # Clean temporary variables
 To determine the total number of steps taken each day, an aggregation using
 the sum function is run for steps relative to the date.
 
-```{r}
+
+```r
 perDate <- aggregate(steps ~ date, activity, sum, na.rm=TRUE) 
 hist(perDate$steps, 
      col="steelblue",
@@ -32,11 +34,25 @@ hist(perDate$steps,
      ylab="Days Logged")
 ```
 
+![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2-1.png) 
+
 From the `perDate` data calculated previously, calculating the mean and
 median are single function calls.
-```{r}
+
+```r
 mean(perDate$steps,na.rm=TRUE)
+```
+
+```
+## [1] 10766.19
+```
+
+```r
 median(perDate$steps,na.rm=TRUE)
+```
+
+```
+## [1] 10765
 ```
 
 ## What is the average daily activity pattern?
@@ -44,7 +60,8 @@ median(perDate$steps,na.rm=TRUE)
 In this case, the desired aggregation is steps relative to the recorded
 time interval, averaged across all days of the data.
 
-```{r}
+
+```r
 daily_avg <- aggregate(steps ~ interval, activity, mean, na.rm=TRUE)
 plot(daily_avg$interval, daily_avg$steps, type="l",
      col="red",
@@ -53,17 +70,29 @@ plot(daily_avg$interval, daily_avg$steps, type="l",
      ylab="Avg Steps")
 ```
 
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4-1.png) 
+
 To identify the most active time interval, the data set can be subsetted for
 the interval value that corresponds to the maximum average.
-```{r}
+
+```r
 daily_avg[daily_avg$steps == max(daily_avg$steps),"interval"]
+```
+
+```
+## [1] 835
 ```
 
 ## Imputing missing values
 ### Calculate the number of rows with missing step data
 
-```{r}
+
+```r
 sum(is.na(activity$steps))
+```
+
+```
+## [1] 2304
 ```
 
 ### Strategy for filling in NA data
@@ -78,7 +107,8 @@ to the mean aggregation before, but applying the median function. This data
 can then be merged with the existing activity data and NA step values 
 replaced with the median values.
 
-```{r}
+
+```r
 daily_med <- aggregate(steps ~ interval, activity, median, na.rm=TRUE)
 
 actFill <- merge(activity, daily_med,
@@ -97,7 +127,8 @@ actFill <- actFill[,c("steps", "interval", "date")]
 With the new data set `actFill`, an aggregation relating steps to date
 can demonstrate the effect of this choice of strategy.
 
-```{r}
+
+```r
 filledByDate <- aggregate(steps ~ date, actFill, sum, na.rm=TRUE) 
 hist(filledByDate$steps, 
      col="steelblue",
@@ -106,14 +137,28 @@ hist(filledByDate$steps,
      ylab="Days Logged")
 ```
 
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-1.png) 
+
 The additional values appear to have primarily boosted the frequency of low
 step days, suggesting that the NA data covers large days of data instead of
 small pockets of missing values.
 
 The mean and median values shift downward as well:
-```{r}
+
+```r
 mean(filledByDate$steps,na.rm=TRUE)
+```
+
+```
+## [1] 9503.869
+```
+
+```r
 median(filledByDate$steps,na.rm=TRUE)
+```
+
+```
+## [1] 10395
 ```
 
 
@@ -122,7 +167,8 @@ Setting up a factor variable leverages the use of the `weekdays()` function
 which is used to identify TRUE (weekday) and FALSE (weekend) for a 2-level
 factor variable.
 
-```{r}
+
+```r
 actFill$timewk <- !(weekdays(as.Date(as.character(actFill$date)))
                     %in% c("Saturday", "Sunday"))
 actFill$timewk <- factor(actFill$timewk, 
@@ -134,7 +180,8 @@ To determine the average number of steps per time interval, another
 aggregation is performed for steps relative to both interval and the newly
 created factor variable `timewk`
 
-```{r}
+
+```r
 tow_avg <- aggregate(steps ~ interval + timewk, actFill, mean, na.rm=TRUE)
 library(lattice)
 xyplot(steps ~ interval | timewk, tow_avg, 
@@ -143,4 +190,6 @@ xyplot(steps ~ interval | timewk, tow_avg,
        xlab="Interval (hhmm)",
        ylab="Number of Steps")
 ```
+
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11-1.png) 
 
